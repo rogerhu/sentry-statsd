@@ -22,9 +22,9 @@ class StatsdOptionsForm(forms.Form):
         required=False,
         help_text='Add loggers names to StatsD metrics (otherwise only project names will be used)'
     )
-    track_only_new = forms.BooleanField(
+    track_new = forms.BooleanField(
         required=False,
-        help_text='Add statsd count to only new Sentry events')
+        help_text='Track new Sentry events')
     interval_seen = forms.IntegerField(
         max_value=65535,
         help_text='Interval to track statsd count for recurring events (0 = disabled)'
