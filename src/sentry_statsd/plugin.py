@@ -35,6 +35,17 @@ class StatsdPlugin(Plugin):
         params = self.get_option
         return bool(params('host', project) and params('port', project))
 
+    def should_record(track_only_new, interval_seen, is_new, group, event):
+        if not track_only_new:
+            return True
+        elif (is_new and track_only_new):
+            return True
+        elif event.group and interval_seen > 0:
+            times_seen = event.group.times_seen
+
+            if times_seen and (times_seen % interval_seen == 0):
+                return True
+
     def post_process(self, group, event, is_new, is_sample, **kwargs):
         """
         Process error.
@@ -47,6 +58,7 @@ class StatsdPlugin(Plugin):
         prefix = self.get_option('prefix', group.project)
         add_loggers = self.get_option('add_loggers', group.project)
         track_only_new = self.get_option('track_only_new', False)
+        interval_seen = self.get_option('interval_seen', 0)
 
         metric = []
         metric.append(group.project.slug.replace('-', '_'))
@@ -54,7 +66,6 @@ class StatsdPlugin(Plugin):
             metric.append(group.logger)
         metric.append(group.get_level_display())
 
-        client = statsd.StatsClient(host, port, prefix=prefix)
-
-        if not track_only_new or (is_new and track_only_new):
+        if self.should_record(track_only_new, interval_seen, is_new, group, event):
+            client = statsd.StatsClient(host, port, prefix=prefix)
             client.incr('.'.join(metric))

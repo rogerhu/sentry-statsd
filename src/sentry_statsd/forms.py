@@ -25,3 +25,8 @@ class StatsdOptionsForm(forms.Form):
     track_only_new = forms.BooleanField(
         required=False,
         help_text='Add statsd count to only new Sentry events')
+    interval_seen = forms.IntegerField(
+        max_value=65535,
+        default=0,
+        help_text='Interval to track statsd count for recurring events (0 = disabled)'
+    )
