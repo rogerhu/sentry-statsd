@@ -35,16 +35,17 @@ class StatsdPlugin(Plugin):
         params = self.get_option
         return bool(params('host', project) and params('port', project))
 
-    def should_record(track_only_new, interval_seen, is_new, group, event):
-        if not track_only_new:
-            return True
-        elif (is_new and track_only_new):
-            return True
-        elif event.group and interval_seen > 0:
+    def should_track_new_event(self, is_new, track_new):
+        return (is_new and track_new)
+
+    def should_track_interval(self, event, interval_seen):
+        if event.group and interval_seen > 0:
             times_seen = event.group.times_seen
 
             if times_seen and (times_seen % interval_seen == 0):
                 return True
+
+        return False
 
     def post_process(self, group, event, is_new, is_sample, **kwargs):
         """
@@ -57,15 +58,20 @@ class StatsdPlugin(Plugin):
         port = self.get_option('port', group.project)
         prefix = self.get_option('prefix', group.project)
         add_loggers = self.get_option('add_loggers', group.project)
-        track_only_new = self.get_option('track_only_new', False)
+        track_new = self.get_option('track_new', False)
         interval_seen = self.get_option('interval_seen', 0)
 
         metric = []
         metric.append(group.project.slug.replace('-', '_'))
         if add_loggers:
             metric.append(group.logger)
+
+        if self.should_track_new_event(is_new, track_new):
+            metric.append('new')
+        elif self.should_track_interval(event, interval_seen):
+            metric.append('recurring')
+
         metric.append(group.get_level_display())
 
-        if self.should_record(track_only_new, interval_seen, is_new, group, event):
-            client = statsd.StatsClient(host, port, prefix=prefix)
-            client.incr('.'.join(metric))
+        client = statsd.StatsClient(host, port, prefix=prefix)
+        client.incr('.'.join(metric))
