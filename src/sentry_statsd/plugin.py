@@ -58,8 +58,8 @@ class StatsdPlugin(Plugin):
         port = self.get_option('port', group.project)
         prefix = self.get_option('prefix', group.project)
         add_loggers = self.get_option('add_loggers', group.project)
-        track_new = self.get_option('track_new', False)
-        interval_seen = self.get_option('interval_seen', 0)
+        track_new = self.get_option('track_new', project=group.project)
+        interval_seen = self.get_option('interval_seen', project=group.project)
 
         metric = []
         metric.append(group.project.slug.replace('-', '_'))
